@@ -5,9 +5,10 @@ import lombok.*;
 import javax.persistence.*;
 
 @Data //Getter, Setter, ToString, EqualsAndHashCode
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "Usuarios")
+@Entity
 public class User {
 
     @Id
