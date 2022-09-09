@@ -4,6 +4,7 @@ package br.com.dicasdeumdev.api.resources;
 import br.com.dicasdeumdev.api.domain.User;
 import br.com.dicasdeumdev.api.domain.dto.UserDTO;
 import br.com.dicasdeumdev.api.services.UserService;
+import br.com.dicasdeumdev.api.services.exceptions.DataIntegratyViolationException;
 import br.com.dicasdeumdev.api.services.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -110,10 +111,36 @@ class UserResourceTest {
         assertNotNull(response.getHeaders().get("Location"));
         assertTrue(response.getHeaders().get("Location").get(0).contains(ID.toString()));
         assertNull(response.getBody());
+
     }
 
     @Test
-    void update() {
+    void quandoCadastrarUsuarioComEmailExistenteRetornarException () {
+        when(service.create(any())).thenThrow(new DataIntegratyViolationException(EMAIL_JA_CADASTRADO_NO_SISTEMA));
+        try {
+            service.create(userDTO);
+        } catch (Exception ex) {
+            assertEquals(DataIntegratyViolationException.class, ex.getClass());
+        }
+    }
+
+    @Test
+    void quandoAtualizarUsuarioRetornarSucesso() {
+        when(service.update(userDTO)).thenReturn(user);
+        when(mapper.map(any(), any())).thenReturn(userDTO);
+
+        ResponseEntity<UserDTO> response = resource.update(ID, userDTO);
+
+        assertNotNull(response);
+        assertNotNull(response.getBody());
+        assertEquals(ResponseEntity.class, response.getClass());
+        assertEquals(UserDTO.class, response.getBody().getClass());
+
+        assertEquals(ID, response.getBody().getId());
+        assertEquals(NAME, response.getBody().getName());
+        assertEquals(EMAIL, response.getBody().getEmail());
+        assertEquals(PASSWORD, response.getBody().getPassword());
+
     }
 
     @Test
