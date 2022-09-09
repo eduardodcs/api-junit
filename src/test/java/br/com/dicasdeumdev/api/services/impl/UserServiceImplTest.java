@@ -19,7 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class UserServiceImplTest {
 
@@ -120,20 +120,22 @@ class UserServiceImplTest {
 
     @Test
     void quandoAtualizarUsuarioRetonarSucesso() {
+        when(repository.findByEmail(anyString())).thenReturn(optinalUser);
         when(repository.save(any())).thenReturn(user);
         User response = service.update(userDTO);
 
         assertNotNull(response);
         assertEquals(User.class, response.getClass());
+        assertEquals(optinalUser.get().getId(), response.getId());
+        assertEquals(optinalUser.get().getEmail(), response.getEmail());
         assertEquals(ID, response.getId());
         assertEquals(NAME, response.getName());
         assertEquals(EMAIL, response.getEmail());
         assertEquals(PASSWORD, response.getPassword());
     }
 
-
     @Test
-    void quandoAtualizarUsuarioComEmailExistenteRetornarException() {
+    void quandoAtualizarUsuarioComEmailExistenteEmOutroUsuarioRetornarException() {
         when(repository.findByEmail(anyString())).thenReturn(optinalUser);
         try {
             userDTO.setId(2);
@@ -145,7 +147,23 @@ class UserServiceImplTest {
     }
 
     @Test
-    void delete() {
+    void deletarUsuarioComSucesso() {
+        when(repository.findById(anyInt())).thenReturn(optinalUser);
+        doNothing().when(repository).deleteById(anyInt());
+
+        service.delete(ID);
+        verify(repository, times(1)).deleteById(anyInt());
+    }
+
+    @Test
+    void quandoDeletarUsuarioQueNaoExisteRetornarExceptionNotFound () {
+        when(repository.findById(anyInt())).thenThrow(new ObjectNotFoundException(OBJETO_NAO_ENCONTRADO));
+        try {
+            service.delete(ID);
+        } catch (Exception ex) {
+            assertEquals(ObjectNotFoundException.class, ex.getClass());
+            verify(repository, times(0)).deleteById(anyInt());
+        }
     }
 
     private void startUser() {
