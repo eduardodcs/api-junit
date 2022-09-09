@@ -3,6 +3,7 @@ package br.com.dicasdeumdev.api.services.impl;
 import br.com.dicasdeumdev.api.domain.User;
 import br.com.dicasdeumdev.api.domain.dto.UserDTO;
 import br.com.dicasdeumdev.api.repositories.UserRepository;
+import br.com.dicasdeumdev.api.services.exceptions.DataIntegratyViolationException;
 import br.com.dicasdeumdev.api.services.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 class UserServiceImplTest {
@@ -27,6 +28,7 @@ class UserServiceImplTest {
     public static final String EMAIL = "edu@gmail.com";
     public static final String PASSWORD = "123123";
     public static final String OBJETO_NAO_ENCONTRADO = "Objeto não encontrado";
+    public static final String EMAIL_JA_CADASTRADO_NO_SISTEMA = "Email já cadastrado no sistema!";
     @InjectMocks
     private UserServiceImpl service;
     @Mock
@@ -92,11 +94,54 @@ class UserServiceImplTest {
     }
 
     @Test
-    void create() {
+    void quandoCadastrarNovoUsuarioRetonarSucesso() {
+        when(repository.save(any())).thenReturn(user);
+        User response = service.create(userDTO);
+
+        assertNotNull(response);
+        assertEquals(User.class, response.getClass());
+        assertEquals(ID, response.getId());
+        assertEquals(NAME, response.getName());
+        assertEquals(EMAIL, response.getEmail());
+        assertEquals(PASSWORD, response.getPassword());
     }
 
     @Test
-    void update() {
+    void quandoCadastrarUsuarioComEmailExistenteRetonarException () {
+        when(repository.findByEmail(anyString())).thenReturn(optinalUser);
+        try {
+            userDTO.setId(2);
+            User response = service.create(userDTO);
+        } catch (Exception ex) {
+            assertEquals(DataIntegratyViolationException.class, ex.getClass());
+            assertEquals(EMAIL_JA_CADASTRADO_NO_SISTEMA, ex.getMessage());
+        }
+    }
+
+    @Test
+    void quandoAtualizarUsuarioRetonarSucesso() {
+        when(repository.save(any())).thenReturn(user);
+        User response = service.update(userDTO);
+
+        assertNotNull(response);
+        assertEquals(User.class, response.getClass());
+        assertEquals(ID, response.getId());
+        assertEquals(NAME, response.getName());
+        assertEquals(EMAIL, response.getEmail());
+        assertEquals(PASSWORD, response.getPassword());
+    }
+
+
+    @Test
+    void quandoAtualizarUsuarioComEmailExistenteRetornarException() {
+        when(repository.findByEmail(anyString())).thenReturn(optinalUser);
+        try {
+            userDTO.setId(2);
+            User response = service.update(userDTO);
+        } catch (Exception ex) {
+            assertEquals(DataIntegratyViolationException.class, ex.getClass());
+            assertEquals(EMAIL_JA_CADASTRADO_NO_SISTEMA, ex.getMessage());
+        }
     }
 
     @Test
