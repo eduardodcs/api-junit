@@ -4,7 +4,7 @@ package br.com.dicasdeumdev.api.resources;
 import br.com.dicasdeumdev.api.domain.User;
 import br.com.dicasdeumdev.api.domain.dto.UserDTO;
 import br.com.dicasdeumdev.api.services.UserService;
-import br.com.dicasdeumdev.api.services.exceptions.DataIntegratyViolationException;
+import br.com.dicasdeumdev.api.services.exceptions.DataIntegrityViolationException;
 import br.com.dicasdeumdev.api.services.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 class UserResourceTest {
@@ -116,11 +116,11 @@ class UserResourceTest {
 
     @Test
     void quandoCadastrarUsuarioComEmailExistenteRetornarException () {
-        when(service.create(any())).thenThrow(new DataIntegratyViolationException(EMAIL_JA_CADASTRADO_NO_SISTEMA));
+        when(service.create(any())).thenThrow(new DataIntegrityViolationException(EMAIL_JA_CADASTRADO_NO_SISTEMA));
         try {
             service.create(userDTO);
         } catch (Exception ex) {
-            assertEquals(DataIntegratyViolationException.class, ex.getClass());
+            assertEquals(DataIntegrityViolationException.class, ex.getClass());
         }
     }
 
@@ -144,7 +144,25 @@ class UserResourceTest {
     }
 
     @Test
-    void delete() {
+    void quandoDeletarRetornarSucesso() {
+        doNothing().when(service).delete(anyInt());
+
+        ResponseEntity<UserDTO> response = resource.delete(ID);
+
+        assertNotNull(response);
+        assertEquals(ResponseEntity.class, response.getClass());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(service, times(1)).delete(anyInt());
+    }
+
+    @Test
+    void quandoDeletarUsuarioQueNaoExisteRetonarException() {
+        doThrow(new ObjectNotFoundException(OBJETO_NAO_ENCONTRADO)).when(service).delete(anyInt());
+        try {
+            resource.delete(ID);
+        } catch (Exception ex) {
+            assertEquals(OBJETO_NAO_ENCONTRADO, ex.getMessage());
+        }
     }
 
     private void startUser() {
